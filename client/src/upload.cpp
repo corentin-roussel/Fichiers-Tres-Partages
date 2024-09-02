@@ -1,8 +1,5 @@
 #include "../headers/upload.hpp"
-#include <cstdio>
 #include <filesystem>
-#include <fstream>
-#include <unistd.h>
 
 Upload::Upload(/* args */)
 {
@@ -10,7 +7,7 @@ Upload::Upload(/* args */)
 
 Upload::Upload(const Upload &other)
 {
-    this->filename = other.filename;
+    this->filename_ = other.filename_;
 }
 
 Upload::~Upload()
@@ -26,20 +23,36 @@ Upload& Upload::operator=(const Upload &other)
     return *this;
 }
 
-void Upload::createFile() {
 
-}
+void Upload::createDirectory() {
+    fs::path exe_path = getExePath(getBuffer());
+    fs::path file_to_create = getFileToCreate();
+    fs::path full_path = exe_path / file_to_create;
 
-void Upload::returnPath() {
-    readlink("/home/corentin/dev_logiciel/Fichiers-Tres-Partages/files/", , size_t len)
-    std::filesystem path = std::filesystem::current_path();
-    const char *path_char = path.string().c_str();
-    if(stat(path, &sb_) == 0) {
-        
-    }else {
-        std::filesystem::create_directory("files");
+    if(!(stat(full_path.c_str(),&sb_) == 0)) {
+        std::filesystem::create_directory(full_path);
+        std::cout << "directory created" << std::endl;
     }
 }
+
+fs::path Upload::getExePath(char *buffer) {
+    ssize_t count = readlink("/proc/self/exe", buffer, 1024);
+    buffer[count] = 0;
+    return fs::path(buffer).parent_path();
+}
+
+void Upload::uploadFile() {
+    
+}
+
+int Upload::getFileSize(const char* pathName) {
+    FILE *file = fopen(pathName, "wb");
+    if( file  == NULL) { 
+        std::cerr << "Error cannot find file. " << std::strerror(errno);
+    }
+    return 1;
+}
+
 
 
 struct stat Upload::getSb() {
@@ -62,6 +75,11 @@ char* Upload::getBuffer() {
     return buffer_;
 }
 
-void Upload::setBuffer(char buffer[]) {
-    buffer_ = buffer[1024];
+
+const char* Upload::getFileToCreate() {
+    return fileToCreate_;
+}
+
+void Upload::setFileToCreate(char* fileName) {
+     fileToCreate_ = fileName;
 }

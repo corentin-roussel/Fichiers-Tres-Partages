@@ -8,20 +8,28 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include "../headers/upload.hpp"
 
-int main() {
+int main(int argc, char* argv[]) {
     int client_socket;
     struct sockaddr_in server_socket;
-    socklen_t s_socket_len;
     int connection;
     char buffer[1024];
+
+    Upload upload = Upload();
+    upload.createDirectory();
+
+    if(argc < 2) {
+        std::cout << "Please use the command appropriately ./lfp port_number." << std::endl;
+        exit(0);
+    }
 
     if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         std::cerr << "Problem creating socket" << std::strerror(errno) << std::endl;
         exit(0);
     }
 
-    server_socket.sin_port = htons(8080);
+    server_socket.sin_port = htons(atoi(argv[1]));
     server_socket.sin_addr.s_addr = INADDR_ANY;
     server_socket.sin_family = AF_INET;
 
@@ -31,13 +39,17 @@ int main() {
         exit(0);
     }
 
-
     while(true)
     {
+        if(strcmp(argv[3], "-upload")) {
+
+        }else if (strcmp(argv[3], "-download")) {
+
+        }
         memset(buffer, 0, sizeof(buffer));
         std::cin >> buffer;
 
-        int sender = send(client_socket, buffer, 1024, 0);
+        send(client_socket, buffer, 1024, 0);
         memset(buffer, 0, 1024);
         int receive = recv(client_socket, buffer, 1024, 0);
 
