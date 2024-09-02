@@ -1,4 +1,4 @@
-./lpf
-./lpf_serv
+lpf
+lpf_serv
 server/obj/*
 client/obj/*
