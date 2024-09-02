@@ -4,7 +4,7 @@ CC = g++
 CFLAGS = -Wall -Werror -Wextra -g3
 
 SRC1 = main.cpp
-EXEC1 = lfp_server
+EXEC1 = lfp_serv
 OBJDIR1 = server/obj/
 SRCDIR1 = server/src/
 SRCS1 = $(addprefix $(SRCDIR1), $(SRC1))
