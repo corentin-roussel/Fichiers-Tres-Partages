@@ -10,13 +10,18 @@
 #include <unistd.h>
 
 
-int main() {
+int main(int argc, char* argv[]) {
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
     std::vector<int> connected;
     fd_set fds;
-    char buffer[1026];
+    char buffer[1024];
     int client_socket;
+
+    if(argc < 2) {
+        std::cout << "Please use the command appropriately ./lfp_serv port_number." << std::endl;
+        exit(0);
+    }
 
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(server_socket < 0) {
@@ -25,7 +30,7 @@ int main() {
     std::cout << "Socket created" << std::endl;
 
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(atoi("8080"));
+    server_addr.sin_port = htons(atoi(argv[1]));
     server_addr.sin_addr.s_addr = INADDR_ANY;
 
     if(bind(server_socket, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0)
