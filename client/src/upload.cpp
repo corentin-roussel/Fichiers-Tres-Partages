@@ -1,5 +1,10 @@
 #include "../headers/upload.hpp"
+#include <cstdio>
 #include <filesystem>
+#include <linux/limits.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 Upload::Upload(/* args */)
 {
@@ -41,16 +46,26 @@ fs::path Upload::getExePath(char *buffer) {
     return fs::path(buffer).parent_path();
 }
 
-void Upload::uploadFile() {
-    
+int Upload::uploadFile(ssize_t fileSize,char *buffer, int chunkSize ,int fileDescriptor) {
+    int i = 0;
+
+    while(i < fileSize) {
+        int error = send(fileDescriptor, &buffer[i], __min(getChunkSize(), sizeof(buffer) - i), 0);
+        if(error < 0) { 
+            return error;
+        }
+        i+=error;
+    }
+    return i;
 }
 
-int Upload::getFileSize(const char* pathName) {
-    FILE *file = fopen(pathName, "wb");
-    if( file  == NULL) { 
-        std::cerr << "Error cannot find file. " << std::strerror(errno);
+ssize_t Upload::getFileSize(const char* pathName) {
+    struct stat stat_file;
+    ssize_t size_file;
+    if(stat(pathName, &stat_file) < 0) {
+        std::cerr << "stat struct not initialized. " << std::strerror(errno);
     }
-    return 1;
+    return size_file = stat_file.st_size;
 }
 
 
@@ -82,4 +97,8 @@ const char* Upload::getFileToCreate() {
 
 void Upload::setFileToCreate(char* fileName) {
      fileToCreate_ = fileName;
+}
+
+int Upload::getChunkSize() {
+    return chunkSize_;
 }
