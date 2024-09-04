@@ -1,23 +1,21 @@
 #pragma once
 #include <iostream>
-#include <cstring>
 #include <linux/limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <limits.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
-#include <sys/types.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <sys/socket.h>
+#include <limits.h>
 #define __min(a,b)  (((a) < (b)) ? (a) : (b))
 
 namespace fs = std::filesystem;
 
-class Upload {
+class ClientUpload {
 private:
     char* filename_;
     struct stat sb_;
@@ -27,10 +25,10 @@ private:
     int chunkSize_ = 4*1024;
 
 public:
-    Upload();
-    Upload(const Upload &other);
-    ~Upload();
-    Upload& operator=(const Upload &other);
+    ClientUpload();
+    ClientUpload(const ClientUpload &other);
+    ~ClientUpload();
+    ClientUpload& operator=(const ClientUpload&other);
 
     int uploadFile(ssize_t fileSize, char *buffer, int chunkSize, int fileDescriptor);
     void downloadFile();

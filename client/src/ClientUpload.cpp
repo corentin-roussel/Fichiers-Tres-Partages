@@ -1,4 +1,4 @@
-#include "../headers/upload.hpp"
+#include "../headers/ClientUpload.hpp"
 #include <cstdio>
 #include <filesystem>
 #include <linux/limits.h>
@@ -6,20 +6,20 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-Upload::Upload(/* args */)
+ClientUpload::Upload(/* args */)
 {
 }
 
-Upload::Upload(const Upload &other)
+ClientUpload::Upload(const ClientUpload&other)
 {
     this->filename_ = other.filename_;
 }
 
-Upload::~Upload()
+ClientUpload::~Upload()
 {
 }
 
-Upload& Upload::operator=(const Upload &other)
+ClientUpload& ClientUpload::operator=(const ClientUpload&other)
 {
     if(this != &other)
     {
@@ -29,7 +29,7 @@ Upload& Upload::operator=(const Upload &other)
 }
 
 
-void Upload::createDirectory() {
+void ClientUpload::createDirectory() {
     fs::path exe_path = getExePath(getBuffer());
     fs::path file_to_create = getFileToCreate();
     fs::path full_path = exe_path / file_to_create;
@@ -40,13 +40,13 @@ void Upload::createDirectory() {
     }
 }
 
-fs::path Upload::getExePath(char *buffer) {
+fs::path ClientUpload::getExePath(char *buffer) {
     ssize_t count = readlink("/proc/self/exe", buffer, 1024);
     buffer[count] = 0;
     return fs::path(buffer).parent_path();
 }
 
-int Upload::uploadFile(ssize_t fileSize,char *buffer, int chunkSize ,int fileDescriptor) {
+int ClientUpload::uploadFile(ssize_t fileSize,char *buffer, int chunkSize ,int fileDescriptor) {
     int i = 0;
 
     while(i < fileSize) {
@@ -59,7 +59,7 @@ int Upload::uploadFile(ssize_t fileSize,char *buffer, int chunkSize ,int fileDes
     return i;
 }
 
-ssize_t Upload::getFileSize(const char* pathName) {
+ssize_t ClientUpload::getFileSize(const char* pathName) {
     struct stat stat_file;
     ssize_t size_file;
     if(stat(pathName, &stat_file) < 0) {
@@ -70,35 +70,35 @@ ssize_t Upload::getFileSize(const char* pathName) {
 
 
 
-struct stat Upload::getSb() {
+struct stat ClientUpload::getSb() {
     return sb_;
 }
 
-void Upload::setSb(struct stat sb) {
+void ClientUpload::setSb(struct stat sb) {
     sb_ = sb;
 }
 
-char* Upload::getFileName() {
+char* ClientUpload::getFileName() {
     return filename_;
 }
 
-void Upload::setFileName(char* filename) {
+void ClientUpload::setFileName(char* filename) {
     filename_ = filename;
 }
 
-char* Upload::getBuffer() {
+char* ClientUpload::getBuffer() {
     return buffer_;
 }
 
 
-const char* Upload::getFileToCreate() {
+const char* ClientUpload::getFileToCreate() {
     return fileToCreate_;
 }
 
-void Upload::setFileToCreate(char* fileName) {
+void ClientUpload::setFileToCreate(char* fileName) {
      fileToCreate_ = fileName;
 }
 
-int Upload::getChunkSize() {
+int ClientUpload::getChunkSize() {
     return chunkSize_;
 }
