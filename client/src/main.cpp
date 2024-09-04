@@ -1,35 +1,41 @@
 #include <cerrno>
-#include <unistd.h>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
 #include <netinet/in.h>
 #include <ostream>
 #include <string.h>
+#include <string>
 #include <sys/select.h>
-#include <sys/socket.h>
-#include "../headers/upload.hpp"
+#include <vector>
+#include "../headers/ClientUpload.hpp"
 
 int main(int argc, char* argv[]) {
     int client_socket;
     struct sockaddr_in server_socket;
     int connection;
     char buffer[1024];
+    ClientUpload upload = ClientUpload();
 
-    Upload upload = Upload();
     upload.createDirectory();
+    ssize_t file_size = upload.getFileSize(argv[3]);
+    std::vector<std::string> split = upload.split(argv[1],':');
 
-    if(argc < 2) {
-        std::cout << "Please use the command appropriately ./lfp port_number." << std::endl;
+
+    std::cout << argv[0] << std::endl;
+    std::cout << argv[1] << std::endl;
+    std::cout << argv[2] << std::endl;
+    std::cout << argv[3] << std::endl;
+
+    if(argc != 4) {
+        std::cout << "Please use the command appropriately ./lfp ip:port -type filename" << std::endl;
         exit(0);
     }
+
 
     if((client_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         std::cerr << "Problem creating socket" << std::strerror(errno) << std::endl;
         exit(0);
     }
 
-    server_socket.sin_port = htons(atoi(argv[1]));
+    server_socket.sin_port = htons(atoi(split.at(1).c_str()));
     server_socket.sin_addr.s_addr = INADDR_ANY;
     server_socket.sin_family = AF_INET;
 
@@ -41,10 +47,14 @@ int main(int argc, char* argv[]) {
 
     while(true)
     {
-        if(strcmp(argv[3], "-upload")) {
+        if(strcmp(argv[2], "-upload")) {
+            std::cout << "uploading file" << std::endl;
+            upload.uploadFile(file_size, upload.getBuffer(), client_socket);
 
-        }else if (strcmp(argv[3], "-download")) {
-
+        }else if (strcmp(argv[2], "-download")) {
+            std::cout << "downloading file" << std::endl;
+        }else {
+            std::cout << "cannot compare the argv[2]" << std::endl;
         }
         memset(buffer, 0, sizeof(buffer));
         std::cin >> buffer;
