@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <linux/limits.h>
+#include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -11,7 +12,8 @@
 #include <filesystem>
 #include <unistd.h>
 #include <limits.h>
-#define __min(a,b)  (((a) < (b)) ? (a) : (b))
+#include <vector>
+#define __min(a,b)  (((int)(a) < (int)(b)) ? (a) : (b))
 
 namespace fs = std::filesystem;
 
@@ -30,12 +32,12 @@ public:
     ~ClientUpload();
     ClientUpload& operator=(const ClientUpload&other);
 
-    int uploadFile(ssize_t fileSize, char *buffer, int chunkSize, int fileDescriptor);
-    void downloadFile();
+    int uploadFile(ssize_t fileSize, char *buffer, int fileDescriptor);
     void createDirectory();
     ssize_t getFileSize(const char* filename);
     char *getExePath();
     fs::path getExePath(char *buffer);
+    std::vector<std::string> split(const std::string& str, char delimiter);
 
     struct stat getSb();
     void setSb(struct stat sb);
