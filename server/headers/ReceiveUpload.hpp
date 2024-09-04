@@ -3,6 +3,7 @@
 class ReceiveUpload {
     private:
     char *file_name_;
+    char *file_path;
 
 
     public:
@@ -10,4 +11,6 @@ class ReceiveUpload {
     ReceiveUpload(const ReceiveUpload&other);
     ~ReceiveUpload();
     ReceiveUpload& operator=(const ReceiveUpload&other);
+
+    int ;
 };
