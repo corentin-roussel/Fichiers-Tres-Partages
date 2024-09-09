@@ -8,6 +8,7 @@
 #include <sys/select.h>
 #include <vector>
 #include <unistd.h>
+#include "../../transfer/headers/Receive.hpp"
 
 
 int main(int argc, char* argv[]) {
@@ -15,8 +16,9 @@ int main(int argc, char* argv[]) {
     socklen_t client_len = sizeof(client_addr);
     std::vector<int> connected;
     fd_set fds;
-    char buffer[1024];
     int client_socket;
+
+    Receive receive = Receive();
 
     if(argc < 2) {
         std::cout << "Please use the command appropriately ./lfp_serv port_number." << std::endl;
@@ -51,6 +53,7 @@ int main(int argc, char* argv[]) {
         for(std::vector<int>::iterator it = connected.begin(); it != connected.end(); ++it) {
             FD_SET(*it, &fds);
         }
+        std::cout << "stillgood 1" << std::endl;
 
         if(select(FD_SETSIZE + 1, &fds, nullptr, nullptr, nullptr) > 0) {
             if(FD_ISSET(server_socket, &fds)) {
@@ -67,8 +70,7 @@ int main(int argc, char* argv[]) {
             for(auto it = connected.begin(); it != connected.end();)
             {
                 if(FD_ISSET(*it, &fds)) {
-                    memset(buffer, 0, 1024);
-                    int received = recv(*it, buffer, 1024, 0);
+                    int received = receive.receiveFile(*it,"filename.txt");
                     if(received < 0)
                     {
                         close(*it);
@@ -76,7 +78,6 @@ int main(int argc, char* argv[]) {
                         it = connected.erase(it);
                         continue;
                     }
-                    send(*it, buffer, received, 0);
                 }
                 ++it;
             }
