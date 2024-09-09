@@ -5,17 +5,17 @@
 #include <string>
 #include <sys/select.h>
 #include <vector>
-#include "../headers/ClientUpload.hpp"
+#include "../../transfer/headers/Send.hpp"
+#include "../../transfer/headers/Receive.hpp"
 
 int main(int argc, char* argv[]) {
     int client_socket;
     struct sockaddr_in server_socket;
     int connection;
     char buffer[1024];
-    ClientUpload upload = ClientUpload();
+    Send upload = Send();
 
     upload.createDirectory();
-    ssize_t file_size = upload.getFileSize(argv[3]);
     std::vector<std::string> split = upload.split(argv[1],':');
 
 
@@ -48,11 +48,13 @@ int main(int argc, char* argv[]) {
     while(true)
     {
         if(strcmp(argv[2], "-upload")) {
-            std::cout << "uploading file" << std::endl;
-            upload.uploadFile(file_size, upload.getBuffer(), client_socket);
 
         }else if (strcmp(argv[2], "-download")) {
-            std::cout << "downloading file" << std::endl;
+            std::cout << "uploading file" << std::endl;
+            if(upload.SendFile(client_socket, argv[3]) < 0) {
+                std::cerr << "File couldn't upload" << std::strerror(errno);
+            }
+            std::cout << "file uploaded" << std::endl;
         }else {
             std::cout << "cannot compare the argv[2]" << std::endl;
         }
