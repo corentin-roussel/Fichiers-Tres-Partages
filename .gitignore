@@ -2,3 +2,4 @@ lpf
 lpf_serv
 server/obj/*
 client/obj/*
+transfer/obj/*
