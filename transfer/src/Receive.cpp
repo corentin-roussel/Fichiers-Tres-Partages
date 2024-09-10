@@ -38,29 +38,103 @@ int Receive::receiveBuffer(int fileDescriptor, char* buffer,int bufferSize, int 
         remainingBytes+=bytesReceived;
     }
     return remainingBytes;
-    
 }
 
-int64_t Receive::receiveFile(int fileDescriptor, std::string fileName, int chunkSize) {
-    std::stringstream fileReceive;
-    fileReceive << getExePath(buffer_) << ("files/");
-    std::cout << fileReceive.str() << std::endl; 
-    if(!fileExists(fileReceive.str())) {
+std::string Receive::receiveNameFile(int fileDescriptor) {
+    int nameLength;
+    if (receiveBuffer(fileDescriptor, reinterpret_cast<char*>(&nameLength), sizeof(nameLength)) != sizeof(nameLength)) {
+        return "Incorrect name length";
+    }
 
-        std::cerr << "File already exists" << std::strerror(errno) <<std::endl;
-        exit(0);
-    } 
-    
-    std::cout << fileReceive.str().append(fileName) << std::endl; 
-    std::ofstream file(fileReceive.str().append(fileName), std::ofstream::binary);
-    if(file.fail()) { return -1; }
+    char* fileName = new char[nameLength + 1];
+    memset(fileName, 0, nameLength + 1);
 
-    int64_t fileSize;
-    if(receiveBuffer(fileDescriptor, reinterpret_cast<char *>(&fileSize), sizeof(fileSize) != sizeof(fileSize))) {
+    if (receiveBuffer(fileDescriptor, fileName, nameLength) != nameLength) {
+        delete[] fileName;
+        return "Error receiving file name";
+    }
+    return fileName;
+}
+
+int64_t Receive::receiveDownloadFile(int fileDescriptor, int chunkSize) {
+
+    char* buffertest = new char[1024];
+
+    int nameLength;
+    if (receiveBuffer(fileDescriptor, reinterpret_cast<char*>(&nameLength), sizeof(nameLength)) != sizeof(nameLength)) {
+        return -1;
+    }
+
+    char* fileName = new char[nameLength + 1];
+    memset(fileName, 0, nameLength + 1);
+
+    if (receiveBuffer(fileDescriptor, fileName, nameLength) != nameLength) {
+        delete[] fileName;
         return -2;
     }
 
-    std::cout << fileSize << std::endl; 
+    if(!fileExists(fileName)) {
+        std::cerr << "File already exists. " << std::strerror(errno) <<std::endl;
+        exit(0);
+    }
+    fs::path filePath = fs::current_path();
+
+    std::ofstream file(filePath, std::ofstream::binary);
+    if(file.fail()) { return -1; }
+
+    int64_t fileSize;
+    if(receiveBuffer(fileDescriptor, reinterpret_cast<char *>(&fileSize), sizeof(fileSize)) != sizeof(fileSize)) {
+        return -2;
+    }
+
+
+    char *buffer = new char[chunkSize];
+    bool errored = false;
+    int64_t bytesToDownload = fileSize;
+    while(bytesToDownload != 0) {
+        int receivedBytes = receiveBuffer(fileDescriptor, buffer, std::min(bytesToDownload, (int64_t)chunkSize));
+        if((receivedBytes < 0) || !file.write(buffer, receivedBytes)) { errored = true; break; }
+        bytesToDownload-=receivedBytes;
+    }
+    delete[] buffer;
+    file.close();
+
+    return errored ? -3 : fileSize;
+}
+
+int64_t Receive::receiveFile(int fileDescriptor, int chunkSize) {
+    char* buffertest = new char[1024];
+
+    int nameLength;
+    if (receiveBuffer(fileDescriptor, reinterpret_cast<char*>(&nameLength), sizeof(nameLength)) != sizeof(nameLength)) {
+        return -1;
+    }
+
+    char* fileName = new char[nameLength + 1];
+    memset(fileName, 0, nameLength + 1);
+
+    if (receiveBuffer(fileDescriptor, fileName, nameLength) != nameLength) {
+        delete[] fileName;
+        return -2;
+    }
+
+    if(!fileExists(fileName)) {
+        std::cerr << "File already exists. " << std::strerror(errno) <<std::endl;
+        exit(0);
+    }
+    std::string fileReceive;
+    fileReceive.append(getExePath(buffertest)); 
+    fileReceive.append("/files/");
+
+    std::string filePath = fileReceive.append(fileName);
+    std::ofstream file(filePath, std::ofstream::binary);
+    if(file.fail()) { return -1; }
+
+    int64_t fileSize;
+    if(receiveBuffer(fileDescriptor, reinterpret_cast<char *>(&fileSize), sizeof(fileSize)) != sizeof(fileSize)) {
+        return -2;
+    }
+
 
     char *buffer = new char[chunkSize];
     bool errored = false;
@@ -88,9 +162,9 @@ std::string Receive::getCurrentDirectory() {
 }
 
 bool Receive::fileExists(std::string fileName) {
-    std::string path = getExePath(buffer_);
-    path.append("files/");
-    std::cout << path << std::endl;
+    char *buffer = new char[1024];
+    std::string path = getExePath(buffer);
+    path.append("/files/");
 
     for(const auto & entry : fs::directory_iterator(path)) {
         if(strcmp(fileName.c_str(), entry.path().c_str())) {
