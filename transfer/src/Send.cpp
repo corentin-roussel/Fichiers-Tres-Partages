@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <fstream>
+#include <string>
 #include <sys/types.h>
 
 Send::Send() {
@@ -55,16 +56,37 @@ int Send::sendBuffer(int fileDescriptor, char* buffer,int bufferSize, int chunkS
     return i;
 }
 
-int64_t Send::SendFile(int fileDescriptor, const char* fileName, int chunkSize) {
+int Send::sendFileNameToDownload(int fileDescriptor, const std::string fileName) {
+
+    int nameLength = fileName.size();
+    if (send(fileDescriptor, reinterpret_cast<char*>(&nameLength), sizeof(nameLength), 0) != sizeof(nameLength)) {
+        return -2;
+    }
+
+    if(send(fileDescriptor, fileName.c_str(), nameLength, 0) != sizeof(fileName)) {
+        return -1;
+    }
+    return 0;
+}
+
+int64_t Send::SendFile(int fileDescriptor, const std::string fileName, int chunkSize) {
     ssize_t fileSize =  getFileSize(fileName);
     if(fileSize < 0) { return -1; }
 
     std::ifstream file(fileName, std::ifstream::binary);
     if(file.fail()) { return -1; }
 
-
-    if(sendBuffer(fileDescriptor, reinterpret_cast<char*>(&fileSize),  sizeof(fileSize) != sizeof(fileSize))) {
+    int nameLength = fileName.size();
+    if (send(fileDescriptor, reinterpret_cast<char*>(&nameLength), sizeof(nameLength), 0) != sizeof(nameLength)) {
         return -2;
+    }
+
+    if (send(fileDescriptor, fileName.c_str(), nameLength, 0) != nameLength) {
+        return -3;
+    }
+
+    if(sendBuffer(fileDescriptor, reinterpret_cast<char*>(&fileSize),  sizeof(fileSize)) != sizeof(fileSize)) {
+        return -4;
     }
 
     char* buffer = new char[chunkSize];
@@ -79,13 +101,13 @@ int64_t Send::SendFile(int fileDescriptor, const char* fileName, int chunkSize) 
     }
     delete[]buffer;
     file.close();
-    return errored ? -3 :fileSize;
+    return errored ? -5 :fileSize;
 };
 
-ssize_t Send::getFileSize(const char* pathName) {
+ssize_t Send::getFileSize(const std::string pathName) {
     struct stat stat_file;
     ssize_t size_file;
-    if(stat(pathName, &stat_file) < 0) {
+    if(stat(pathName.c_str(), &stat_file) < 0) {
         std::cerr << "stat struct not initialized. " << std::strerror(errno);
     }
     return size_file = stat_file.st_size;
