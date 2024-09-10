@@ -14,6 +14,7 @@ int main(int argc, char* argv[]) {
     int connection;
     char buffer[1024];
     Send upload = Send();
+    Receive receiving = Receive();
 
     upload.createDirectory();
     std::vector<std::string> split = upload.split(argv[1],':');
@@ -45,16 +46,22 @@ int main(int argc, char* argv[]) {
         exit(0);
     }
 
+    std::string fileName = argv[3];
+
     while(true)
     {
-        if(strcmp(argv[2], "-upload")) {
-
-        }else if (strcmp(argv[2], "-download")) {
+        if(strcmp(argv[2], "-upload") == 0) {
             std::cout << "uploading file" << std::endl;
-            if(upload.SendFile(client_socket, argv[3]) < 0) {
+            if(upload.SendFile(client_socket, fileName) < 0) {
                 std::cerr << "File couldn't upload" << std::strerror(errno);
             }
             std::cout << "file uploaded" << std::endl;
+        }else if (strcmp(argv[2], "-download") == 0) {
+            std::cout << "downloading file" << std::endl;
+            if(receiving.receiveFile(client_socket) < 0) {
+                std::cerr << "File couldn't be downloaded" << std::strerror(errno);
+            }
+            std::cout << "file downloaded" << std::endl;
         }else {
             std::cout << "cannot compare the argv[2]" << std::endl;
         }
