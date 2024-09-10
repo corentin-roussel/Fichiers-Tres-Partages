@@ -32,12 +32,13 @@ public:
     Send& operator=(const Send&other);
 
     int sendBuffer(int fileDescriptor, char *buffer, int bufferSize,int chunkSize = 4*1024);
+    int sendFileNameToDownload(int fileDescriptor, const std::string filename);
     void createDirectory();
-    ssize_t getFileSize(const char* filename);
+    ssize_t getFileSize(const std::string filename);
     char *getExePath();
     fs::path getExePath(char *buffer);
     std::vector<std::string> split(const std::string& str, char delimiter);
-    int64_t SendFile(int fileDescriptor, const char* fileName, int chunkSize = 64*1024);
+    int64_t SendFile(int fileDescriptor, const std::string fileName, int chunkSize = 64*1024);
 
     struct stat getSb();
     void setSb(struct stat sb);
