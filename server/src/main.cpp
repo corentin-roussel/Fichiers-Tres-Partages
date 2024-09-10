@@ -9,6 +9,7 @@
 #include <vector>
 #include <unistd.h>
 #include "../../transfer/headers/Receive.hpp"
+#include "../../transfer/headers/Send.hpp"
 
 
 int main(int argc, char* argv[]) {
@@ -19,6 +20,8 @@ int main(int argc, char* argv[]) {
     int client_socket;
 
     Receive receive = Receive();
+    Send sending = Send();
+
 
     if(argc < 2) {
         std::cout << "Please use the command appropriately ./lfp_serv port_number." << std::endl;
@@ -70,18 +73,32 @@ int main(int argc, char* argv[]) {
             for(auto it = connected.begin(); it != connected.end();)
             {
                 if(FD_ISSET(*it, &fds)) {
-                    int received = receive.receiveFile(*it,"filename.txt");
-                    if(received < 0)
+                    int received = receive.receiveFile(*it);
+                    if(received == -1)
                     {
-                        close(*it);
-                        FD_CLR(*it, &fds);
-                        it = connected.erase(it);
-                        continue;
+                        std::cout <<  "problem with file creation" << std::endl;
+                    }else if (received == -2) {
+                        std::cout <<  "problem with retrieving fileSize" << std::endl;
+                    }else if (received == -3) {
+                        std::cout <<  "problem with retrieving fileSize" << std::endl;
                     }
                 }
+
+                if(FD_ISSET(*it, &fds)) {
+                    int sent = sending.SendFile(*it, "filename.txt");
+                    if(sent == -1)
+                    {
+                        std::cout <<  "problem with file creation" << std::endl;
+                    }else if (sent == -2) {
+                        std::cout <<  "problem with retrieving fileSize" << std::endl;
+                    }else if (sent == -3) {
+                        std::cout <<  "problem with retrieving fileSize" << std::endl;
+                    }
+
+                }
+
                 ++it;
             }
-            
         }
     }
 }
