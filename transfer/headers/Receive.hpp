@@ -19,7 +19,9 @@ public:
     Receive& operator=(const Receive&other);
 
     int receiveBuffer(int fileDescriptor, char *buffer, int bufferSize, int chunkSize = 4*1024);
-    int64_t receiveFile(int fileDescriptor, std::string fileName, int chunksize = 64*1024);
+    std::string receiveNameFile(int fileDescriptor);
+    int64_t receiveFile(int fileDescriptor, int chunksize = 64*1024);
+    int64_t receiveDownloadFile(int fileDescriptor, int chunkSize);
     fs::path getExePath(char *buffer);
     std::string getCurrentDirectory();
     bool fileExists(std::string fileName);
