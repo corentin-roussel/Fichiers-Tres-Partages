@@ -10,7 +10,7 @@ SRCDIR1 = server/src/
 SRCS1 = $(addprefix $(SRCDIR1), $(SRC1))
 OBJ1 = $(SRCS1:$(SRCDIR1)%.cpp=$(OBJDIR1)%.o)
 
-SRC2 = main.cpp upload.cpp
+SRC2 = main.cpp ClientUpload.cpp
 EXEC2 = lfp
 OBJDIR2 = client/obj/
 SRCDIR2 = client/src/
@@ -19,15 +19,12 @@ OBJ2 = $(SRCS2:$(SRCDIR2)%.cpp=$(OBJDIR2)%.o)
 
 all : $(EXEC1) $(EXEC2)
 
-$(EXEC1) : $(OBJ1) $(OBJ3)
+$(EXEC1) : $(OBJ1) $(OBJ1)
 	$(CC) -o $@ $^
 
-$(EXEC2) : $(OBJ2) $(OBJ3)
+$(EXEC2) : $(OBJ2) $(OBJ2)
 	$(CC) -o $@ $^
 
-
-$(OBJDIR3)%.o : $(SRCDIR3)%.cpp
-	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJDIR1)%.o : $(SRCDIR1)%.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<

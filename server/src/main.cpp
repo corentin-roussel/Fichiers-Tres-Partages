@@ -1,7 +1,7 @@
 #include <cstring>
 #include <iostream>
 #include <ostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>

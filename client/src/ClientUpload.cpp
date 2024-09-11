@@ -6,16 +6,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-ClientUpload::Upload(/* args */)
+ClientUpload::ClientUpload(/* args */)
 {
 }
 
-ClientUpload::Upload(const ClientUpload&other)
+ClientUpload::ClientUpload(const ClientUpload&other)
 {
     this->filename_ = other.filename_;
 }
 
-ClientUpload::~Upload()
+ClientUpload::~ClientUpload()
 {
 }
 
@@ -46,11 +46,11 @@ fs::path ClientUpload::getExePath(char *buffer) {
     return fs::path(buffer).parent_path();
 }
 
-int ClientUpload::uploadFile(ssize_t fileSize,char *buffer, int chunkSize ,int fileDescriptor) {
+int ClientUpload::uploadFile(ssize_t fileSize, char *buffer, int fileDescriptor) {
     int i = 0;
 
     while(i < fileSize) {
-        int error = send(fileDescriptor, &buffer[i], __min(getChunkSize(), sizeof(buffer) - i), 0);
+        int error = send(fileDescriptor, &buffer[i], __min(getChunkSize(), static_cast<int>(sizeof(buffer)) - i), 0);
         if(error < 0) { 
             return error;
         }

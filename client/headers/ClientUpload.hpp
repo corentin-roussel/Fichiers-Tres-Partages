@@ -30,7 +30,7 @@ public:
     ~ClientUpload();
     ClientUpload& operator=(const ClientUpload&other);
 
-    int uploadFile(ssize_t fileSize, char *buffer, int chunkSize, int fileDescriptor);
+    int uploadFile(ssize_t fileSize, char *buffer, int fileDescriptor);
     void downloadFile();
     void createDirectory();
     ssize_t getFileSize(const char* filename);
