@@ -1,9 +1,12 @@
 #include <cerrno>
 #include <netinet/in.h>
+#include <numeric>
 #include <ostream>
 #include <string.h>
 #include <string>
 #include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <vector>
 #include "../../transfer/headers/Send.hpp"
 #include "../../transfer/headers/Receive.hpp"
@@ -12,18 +15,11 @@ int main(int argc, char* argv[]) {
     int client_socket;
     struct sockaddr_in server_socket;
     int connection;
-    char buffer[1024];
     Send upload = Send();
     Receive receiving = Receive();
 
     upload.createDirectory();
     std::vector<std::string> split = upload.split(argv[1],':');
-
-
-    std::cout << argv[0] << std::endl;
-    std::cout << argv[1] << std::endl;
-    std::cout << argv[2] << std::endl;
-    std::cout << argv[3] << std::endl;
 
     if(argc != 4) {
         std::cout << "Please use the command appropriately ./lfp ip:port -type filename" << std::endl;
@@ -47,37 +43,38 @@ int main(int argc, char* argv[]) {
     }
 
     std::string fileName = argv[3];
+    bool transmitting = true;
 
-    while(true)
+    while(transmitting)
     {
         if(strcmp(argv[2], "-upload") == 0) {
+            int type = 1;
+            if(send(client_socket, &type, sizeof(type), 0) != sizeof(type)) {
+                std::cout << "Check size of type varaible" << std::endl;
+                transmitting = false;
+            }
             std::cout << "uploading file" << std::endl;
             if(upload.SendFile(client_socket, fileName) < 0) {
                 std::cerr << "File couldn't upload" << std::strerror(errno);
+                transmitting = false;
             }
             std::cout << "file uploaded" << std::endl;
+            transmitting = false;
         }else if (strcmp(argv[2], "-download") == 0) {
+            int type = 2;
+            if(send(client_socket, reinterpret_cast<char*>(&type), sizeof(type), 0) != sizeof(type)) {
+                std::cout << "Check size of type varaible" << std::endl;
+                transmitting = false;
+            }
             std::cout << "downloading file" << std::endl;
-            if(receiving.receiveFile(client_socket) < 0) {
+            upload.sendFileNameToDownload(client_socket, fileName);
+            if(receiving.receiveDownloadFile(client_socket) < 0) {
                 std::cerr << "File couldn't be downloaded" << std::strerror(errno);
+                transmitting = false;
             }
             std::cout << "file downloaded" << std::endl;
         }else {
             std::cout << "cannot compare the argv[2]" << std::endl;
-        }
-        memset(buffer, 0, sizeof(buffer));
-        std::cin >> buffer;
-
-        send(client_socket, buffer, 1024, 0);
-        memset(buffer, 0, 1024);
-        int receive = recv(client_socket, buffer, 1024, 0);
-
-        buffer[receive] = '\0';
-        if(strcmp(buffer, "ping") == 0) {
-            std::cout << "pong" << std::endl;
-        }
-        if(strcmp(buffer, "quit") == 0) {
-            break;
         }
     }
 
