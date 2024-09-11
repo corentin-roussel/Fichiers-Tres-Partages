@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <fstream>
+#include <linux/limits.h>
 #include <string>
 #include <sys/types.h>
 
@@ -46,7 +47,6 @@ fs::path Send::getExePath(char *buffer) {
 int Send::sendBuffer(int fileDescriptor, char* buffer,int bufferSize, int chunkSize) {
     int i = 0;
     while(i < bufferSize) {
-        std::cout <<  i <<std::endl;
         int ret = send(fileDescriptor, &buffer[i], std::min(chunkSize, bufferSize - i), 0);
         if(ret < 0) {
             return ret;
@@ -68,6 +68,49 @@ int Send::sendFileNameToDownload(int fileDescriptor, const std::string fileName)
     }
     return 0;
 }
+
+int64_t Send::sendFileFromServer(int fileDescriptor, const std::string fileName, int chunkSize) {
+    char *bufferFilePath = new char[PATH_MAX];
+    std::string exePath = getExePath(bufferFilePath);
+    exePath.append("/files/");
+    std::string pathFileName = exePath.append(fileName);
+
+    ssize_t fileSize =  getFileSize(pathFileName);
+    if(fileSize < 0) { return -1; }
+
+
+    std::cout << fileSize << std::endl;
+
+    std::ifstream file(pathFileName, std::ifstream::binary);
+    if(file.fail()) { return -1; }
+
+    int nameLength = pathFileName.size();
+    if (send(fileDescriptor, reinterpret_cast<char*>(&nameLength), sizeof(nameLength), 0) != sizeof(nameLength)) {
+        return -2;
+    }
+
+    if (send(fileDescriptor, fileName.c_str(), nameLength, 0) != nameLength) {
+        return -3;
+    }
+
+    if(sendBuffer(fileDescriptor, reinterpret_cast<char*>(&fileSize),  sizeof(fileSize)) != sizeof(fileSize)) {
+        return -4;
+    }
+
+    char* buffer = new char[chunkSize];
+    bool errored = false;
+    int64_t remainingBytes = fileSize;
+    while(remainingBytes != 0) {
+        const int64_t bytesToRead = std::min(remainingBytes, (int64_t)chunkSize);
+        if(!file.read(buffer, bytesToRead)) {errored = true; break;}
+        const int bytesSent = sendBuffer(fileDescriptor, buffer, bytesToRead);
+        if(bytesSent< 0) { errored = true; break; }
+        remainingBytes-=bytesSent;
+    }
+    delete[]buffer;
+    file.close();
+    return errored ? -5 :fileSize;
+};
 
 int64_t Send::SendFile(int fileDescriptor, const std::string fileName, int chunkSize) {
     ssize_t fileSize =  getFileSize(fileName);
@@ -109,6 +152,7 @@ ssize_t Send::getFileSize(const std::string pathName) {
     ssize_t size_file;
     if(stat(pathName.c_str(), &stat_file) < 0) {
         std::cerr << "stat struct not initialized. " << std::strerror(errno);
+        return -1;
     }
     return size_file = stat_file.st_size;
 }

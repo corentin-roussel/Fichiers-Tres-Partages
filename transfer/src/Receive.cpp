@@ -58,8 +58,6 @@ std::string Receive::receiveNameFile(int fileDescriptor) {
 
 int64_t Receive::receiveDownloadFile(int fileDescriptor, int chunkSize) {
 
-    char* buffertest = new char[1024];
-
     int nameLength;
     if (receiveBuffer(fileDescriptor, reinterpret_cast<char*>(&nameLength), sizeof(nameLength)) != sizeof(nameLength)) {
         return -1;
@@ -72,12 +70,17 @@ int64_t Receive::receiveDownloadFile(int fileDescriptor, int chunkSize) {
         delete[] fileName;
         return -2;
     }
+    char *bufferName = new char[64];
+    std::string exePath = getExePath(bufferName);
+    exePath.append("/");
+    exePath.append(fileName);
 
-    if(!fileExists(fileName)) {
+    if(fileExists(exePath.c_str())) {
         std::cerr << "File already exists. " << std::strerror(errno) <<std::endl;
         exit(0);
     }
     fs::path filePath = fs::current_path();
+    filePath.append(fileName);
 
     std::ofstream file(filePath, std::ofstream::binary);
     if(file.fail()) { return -1; }
@@ -87,6 +90,7 @@ int64_t Receive::receiveDownloadFile(int fileDescriptor, int chunkSize) {
         return -2;
     }
 
+    std::cout << "it works 1" << std::endl;
 
     char *buffer = new char[chunkSize];
     bool errored = false;
@@ -118,7 +122,7 @@ int64_t Receive::receiveFile(int fileDescriptor, int chunkSize) {
         return -2;
     }
 
-    if(!fileExists(fileName)) {
+    if(fileExists(fileName)) {
         std::cerr << "File already exists. " << std::strerror(errno) <<std::endl;
         exit(0);
     }
