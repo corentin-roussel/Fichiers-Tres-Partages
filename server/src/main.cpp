@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <ostream>
@@ -49,6 +50,8 @@ int main(int argc, char* argv[]) {
         std::cerr << ("Error creating socket") << std::strerror(errno) << std::endl;
     }
 
+    int type = 0;
+
     while(true) {
         FD_ZERO(&fds);
         FD_SET(server_socket, &fds);
@@ -56,7 +59,6 @@ int main(int argc, char* argv[]) {
         for(std::vector<int>::iterator it = connected.begin(); it != connected.end(); ++it) {
             FD_SET(*it, &fds);
         }
-        std::cout << "stillgood 1" << std::endl;
 
         if(select(FD_SETSIZE + 1, &fds, nullptr, nullptr, nullptr) > 0) {
             if(FD_ISSET(server_socket, &fds)) {
@@ -73,30 +75,49 @@ int main(int argc, char* argv[]) {
             for(auto it = connected.begin(); it != connected.end();)
             {
                 if(FD_ISSET(*it, &fds)) {
-                    int received = receive.receiveFile(*it);
-                    if(received == -1)
-                    {
-                        std::cout <<  "problem with file creation" << std::endl;
-                    }else if (received == -2) {
-                        std::cout <<  "problem with retrieving fileSize" << std::endl;
-                    }else if (received == -3) {
-                        std::cout <<  "problem with retrieving fileSize" << std::endl;
+                    if(recv(*it, reinterpret_cast<char*>(&type), sizeof(type), 0) != sizeof(type)) {
+                        std::cout << "couldn't get the type of the request" << std::endl;
+                    }
+                    std::cout << type << std::endl;
+                }
+                if(type == 1) {
+                    if(FD_ISSET(*it, &fds)) {
+                        int received = receive.receiveFile(*it);
+                        if (received == 0) {
+                            continue;
+                        }
+                        else if(received == -1) {
+                            std::cout <<  "problem with file creation" << std::endl;
+                        }else if (received == -2) {
+                            std::cout <<  "problem with retrieving fileSize" << std::endl;
+                        }else if (received == -3) {
+                            std::cout <<  "problem with retrieving fileSize" << std::endl;
+                        }
+                        close(*it);
+                        FD_CLR(*it, &fds);
+                        it = connected.erase(it);
+                        continue;
+                    }
+                }else if (type == 2) {
+                    if(FD_ISSET(*it, &fds)) {
+                        std::string receiveNameFile = receive.receiveNameFile(*it);
+                        int sent = sending.sendFileFromServer(*it, receiveNameFile);
+                        if(sent == 0) {
+                            continue;
+                        }
+                        else if(sent == -1) {
+                            std::cout <<  "problem with file creation" << std::endl;
+                        }else if (sent == -2) {
+                            std::cout <<  "problem with retrieving fileSize" << std::endl;
+                        }else if (sent == -3) {
+                            std::cout <<  "problem with retrieving fileSize" << std::endl;
+                        }
+                        close(*it);
+                        FD_CLR(*it, &fds);
+                        it = connected.erase(it);
+                        continue;
                     }
                 }
-
-                if(FD_ISSET(*it, &fds)) {
-                    int sent = sending.SendFile(*it, "filename.txt");
-                    if(sent == -1)
-                    {
-                        std::cout <<  "problem with file creation" << std::endl;
-                    }else if (sent == -2) {
-                        std::cout <<  "problem with retrieving fileSize" << std::endl;
-                    }else if (sent == -3) {
-                        std::cout <<  "problem with retrieving fileSize" << std::endl;
-                    }
-
-                }
-
                 ++it;
             }
         }
