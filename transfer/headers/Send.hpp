@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <iostream>
 #include <linux/limits.h>
 #include <string>
@@ -39,6 +40,7 @@ public:
     fs::path getExePath(char *buffer);
     std::vector<std::string> split(const std::string& str, char delimiter);
     int64_t SendFile(int fileDescriptor, const std::string fileName, int chunkSize = 64*1024);
+    int64_t sendFileFromServer(int fileDescriptor, const std::string fileName, int chunkSize = 64*1024);
 
     struct stat getSb();
     void setSb(struct stat sb);

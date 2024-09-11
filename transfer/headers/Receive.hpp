@@ -21,7 +21,7 @@ public:
     int receiveBuffer(int fileDescriptor, char *buffer, int bufferSize, int chunkSize = 4*1024);
     std::string receiveNameFile(int fileDescriptor);
     int64_t receiveFile(int fileDescriptor, int chunksize = 64*1024);
-    int64_t receiveDownloadFile(int fileDescriptor, int chunkSize);
+    int64_t receiveDownloadFile(int fileDescriptor, int chunkSize = 64*1024);
     fs::path getExePath(char *buffer);
     std::string getCurrentDirectory();
     bool fileExists(std::string fileName);
