@@ -6,6 +6,12 @@ struct User{
     bool isConnected = false;
 } user;
 
+struct AuthProtocol{
+    int codeAction;
+    char buffer[128];
+    char serverResponse[1024];
+} aProtocol;
+
 int main(int argc, char* argv[]) {
     struct sockaddr_in server_socket;
     int connection;
@@ -63,10 +69,11 @@ int main(int argc, char* argv[]) {
 }
 
 bool Authentication(){
-    if(user.isConnected) return true;
     std::string credentials;
-    char *input = nullptr;
-    char buffer[1024];
+    char input[64];
+
+    if(user.isConnected)
+        return true;
 
     // ask credentials
     std::cout << "Please enter you username and your password in this format : 'username password'" << std::endl;
@@ -74,13 +81,15 @@ bool Authentication(){
     // check credentials (server) :
 
     //envoyer les credentials au server
-    memset(buffer, 0, sizeof(buffer));
-    std::cin >> credentials;
+    aProtocol.codeAction = 1;
+    memset(aProtocol.buffer, 0, sizeof(aProtocol.buffer));
+    std::cin >> aProtocol.buffer;
+    send(user.socket, &aProtocol, sizeof(aProtocol), 0);
+    ssize_t receive;
 
     //recevoir la reponse du server
-    send(user.socket, buffer, sizeof(buffer), 0);         // PAS user.socket mais les crédentials
-    memset(buffer, 0, sizeof(buffer));
-    int receive = recv(user.socket, buffer, sizeof(buffer), 0);
+    memset(aProtocol.serverResponse, 0, sizeof(aProtocol.serverResponse));
+    receive = recv(user.socket, aProtocol.serverResponse, sizeof(aProtocol.serverResponse), 0);
 
     if(receive < 0){
         std::cout << "Problem getting the response from the server";
@@ -88,35 +97,61 @@ bool Authentication(){
     }
 
     //traiter la réponse
-    buffer[receive] = '\0';
+    aProtocol.serverResponse[receive] = '\0';
+
+    // if good, connect, else ask if the user want to create an account
+    if(strcmp(aProtocol.serverResponse, "login ok") == 0){
+        user.isConnected = true;
+        std::cout << "You are connected" << std::endl;
+        return true;
+    }
+    std::cout << "This pair username-password does not exist. What do you want to do? (login/register)" << std::endl;
 
     while (true){
+        memset(input, 0, sizeof(input));
+        std::cin >> input;
+
+        if(strcmp(input, "login") == 0){
+            aProtocol.codeAction = 1;
+        }
+        else if(strcmp(input, "register") == 0){
+            aProtocol.codeAction = 2;
+        }
+        else{
+            std::cout << "This command does not exist. What do you want to do? (login/register)" << std::endl;
+            aProtocol.codeAction = 0;
+            memset(aProtocol.buffer, 0, sizeof(aProtocol.buffer));
+            memset(aProtocol.serverResponse, 0, sizeof(aProtocol.serverResponse));
+            continue;
+        }
+
+        std::cout << "Please enter you username and your password in this format : 'username password'" << std::endl;
+        memset(aProtocol.buffer, 0, sizeof(aProtocol.buffer));
+        std::cin >> aProtocol.buffer;
+        send(user.socket, &aProtocol, sizeof(aProtocol), 0);
+
+        memset(aProtocol.serverResponse, 0, sizeof(aProtocol.serverResponse));
+        receive = recv(user.socket, aProtocol.serverResponse, sizeof(aProtocol.serverResponse), 0);
+
+        if(receive < 0){
+            std::cout << "Problem getting the response from the server";
+            return false;
+        }
+
+        //traiter la réponse
+        aProtocol.serverResponse[receive] = '\0';
+
         // if good, connect, else ask if the user want to create an account
-        if(strcmp(buffer, "login ok") == 0){
+        if(strcmp(aProtocol.serverResponse, "login ok") == 0){
             user.isConnected = true;
             std::cout << "You are connected" << std::endl;
+            return true;
+        }else if(strcmp(aProtocol.serverResponse, "register ok") == 0){
+            user.isConnected = true;
+            std::cout << "You are registered" << std::endl;
             return true;
         }
 
         std::cout << "This pair username-password does not exist. What do you want to do? (login/register)" << std::endl;
-        std::cin >> input;
-
-        if(strcmp(input, "login") == 0){
-
-        }
-        else if(strcmp(input, "register") == 0){
-
-        }
-        else{
-            std::cout << "This pair username-password does not exist. What do you want to do? (login/register)" << std::endl;
-        }
-
-        // if yes, ask credentials for register, else ask credentials for login
-
-        // if register, check credentials format
-
-        // send to server and wait for answer
-        // - for register check if username don't exist
-        // - for login check credentials
     }
 }
