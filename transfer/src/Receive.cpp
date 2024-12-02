@@ -90,7 +90,6 @@ int64_t Receive::receiveDownloadFile(int fileDescriptor, int chunkSize) {
         return -2;
     }
 
-    std::cout << "it works 1" << std::endl;
 
     char *buffer = new char[chunkSize];
     bool errored = false;
